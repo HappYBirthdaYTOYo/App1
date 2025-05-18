@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { 
   Plus, Calendar as CalendarIcon, CheckSquare, Clock, Tag, 
-  AlertCircle, CheckCircle2, CircleCheck 
+  AlertCircle, CheckCircle2, CircleCheck, ChevronDown 
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Task {
   id: string;
@@ -38,43 +39,8 @@ const getInitialTasks = (): Task[] => {
     }
   }
 
-  // Default tasks if none are saved
-  return [
-    {
-      id: "1",
-      title: "Complete project proposal",
-      description: "Finish the draft and send it for review",
-      priority: "high",
-      dueDate: "2025-05-20",
-      tags: ["work", "important"],
-      completed: false,
-    },
-    {
-      id: "2",
-      title: "Schedule dentist appointment",
-      priority: "medium",
-      dueDate: "2025-05-25",
-      tags: ["health"],
-      completed: false,
-    },
-    {
-      id: "3",
-      title: "Buy groceries",
-      description: "Milk, eggs, bread, vegetables",
-      priority: "low",
-      dueDate: "2025-05-19",
-      tags: ["personal"],
-      completed: false,
-    },
-    {
-      id: "4",
-      title: "Renew gym membership",
-      priority: "medium",
-      dueDate: "2025-05-30",
-      tags: ["health", "fitness"],
-      completed: true,
-    },
-  ];
+  // Return empty array since we don't want sample data
+  return [];
 };
 
 export function TasksPage() {
@@ -91,6 +57,7 @@ export function TasksPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState<"today" | "upcoming" | "completed" | "all">("today");
   
   // Save tasks to localStorage whenever they change
   const saveTasks = (updatedTasks: Task[]) => {
@@ -172,6 +139,11 @@ export function TasksPage() {
     setIsCalendarOpen(false);
   };
 
+  const handleStatusChange = (status: "today" | "upcoming" | "completed" | "all") => {
+    setCurrentTab(status);
+    setSelectedDate(undefined);
+  };
+
   const filterTasksByDate = (date: Date | undefined) => {
     if (!date) return tasks;
     
@@ -245,43 +217,27 @@ export function TasksPage() {
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <div className="flex bg-secondary rounded-lg p-1 w-full sm:w-auto">
-            <Button 
-              variant={!selectedDate && !filteredTasks.some(t => t.completed) ? "default" : "ghost"}
-              size="sm" 
-              className="flex-1"
-              onClick={() => { 
-                setSelectedDate(undefined);
-              }}
-            >
-              <CheckSquare className="h-4 w-4 mr-2" />
-              Pending
-            </Button>
-            <Button 
-              variant={filteredTasks.some(t => t.completed) ? "default" : "ghost"}
-              size="sm" 
-              className="flex-1"
-              onClick={() => {
-                setSelectedDate(undefined);
-                // This visual state is handled in the tabs
-              }}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Completed
-            </Button>
-            <Button 
-              variant={!selectedDate && filteredTasks.some(t => !t.completed && new Date(t.dueDate) > new Date()) ? "default" : "ghost"}
-              size="sm" 
-              className="flex-1"
-              onClick={() => {
-                setSelectedDate(undefined);
-                // This visual state is handled in the tabs
-              }}
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Upcoming
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-28">
+                <span className="mr-1">Status</span> <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleStatusChange("today")}>
+                <CheckSquare className="mr-2 h-4 w-4" />
+                Pending
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleStatusChange("upcoming")}>
+                <Clock className="mr-2 h-4 w-4" />
+                Upcoming
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleStatusChange("completed")}>
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Completed
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
@@ -455,7 +411,7 @@ export function TasksPage() {
       )}
       
       {!selectedDate && (
-        <Tabs defaultValue="today" className="w-full">
+        <Tabs value={currentTab} onValueChange={(value) => setCurrentTab(value as any)} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="today" className="flex items-center">
               <CheckSquare className="h-4 w-4 mr-2" />
@@ -513,7 +469,15 @@ export function TasksPage() {
           </TabsContent>
           
           <TabsContent value="all" className="mt-0">
-            {tasks.map(task => <TaskItem key={task.id} task={task} />)}
+            {tasks.length > 0 ? (
+              tasks.map(task => <TaskItem key={task.id} task={task} />)
+            ) : (
+              <Card>
+                <CardHeader className="text-center py-6">
+                  <CardTitle>No tasks available</CardTitle>
+                </CardHeader>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       )}

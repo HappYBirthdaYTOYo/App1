@@ -29,11 +29,10 @@ export function PasswordProtection({ pageName, returnPath }: PasswordProtectionP
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // For demo purposes, using a simple password
-    // In a real app, you would use a more secure method
-    const defaultPassword = "1234";
+    // Get stored password
+    const storedPassword = localStorage.getItem("appPassword") || "1234";
     
-    if (password === defaultPassword) {
+    if (password === storedPassword) {
       // Store authorization status in localStorage
       const authorizedPages = JSON.parse(localStorage.getItem("authorizedPages") || "{}");
       authorizedPages[pageName] = true;

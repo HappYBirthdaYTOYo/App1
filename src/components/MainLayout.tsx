@@ -1,30 +1,13 @@
 
-import { useState, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { AIAssistant } from "./AIAssistant";
 import { ThemeProvider } from "./ThemeProvider";
-import { PasswordSetupDialog } from "./PasswordSetupDialog";
 
 export function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isFirstAccess, setIsFirstAccess] = useState(false);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check if this is the first time accessing the app
-    const passwordConfigured = localStorage.getItem("passwordConfigured");
-    if (!passwordConfigured) {
-      setIsFirstAccess(true);
-    }
-  }, []);
-
-  const handlePasswordSetup = () => {
-    setIsFirstAccess(false);
-    // After password is set, navigate to dashboard
-    navigate("/dashboard");
-  };
 
   return (
     <ThemeProvider defaultTheme="light">
@@ -43,8 +26,6 @@ export function MainLayout() {
         
         <AIAssistant />
       </div>
-
-      <PasswordSetupDialog isOpen={isFirstAccess} onComplete={handlePasswordSetup} />
     </ThemeProvider>
   );
 }

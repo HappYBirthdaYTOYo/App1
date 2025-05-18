@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,15 @@ export function PasswordSetupDialog({ isOpen, onComplete }: PasswordSetupDialogP
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  
+  // Initialize default password if none exists
+  useEffect(() => {
+    const hasPassword = localStorage.getItem("appPassword");
+    if (!hasPassword) {
+      localStorage.setItem("appPassword", "1234");
+      localStorage.setItem("passwordConfigured", "true");
+    }
+  }, []);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

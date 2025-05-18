@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -10,21 +10,14 @@ import { toast } from "@/hooks/use-toast";
 interface PasswordProtectionProps {
   pageName: string;
   returnPath: string;
+  onAuthenticated?: () => void;
 }
 
-export function PasswordProtection({ pageName, returnPath }: PasswordProtectionProps) {
+export function PasswordProtection({ pageName, returnPath, onAuthenticated }: PasswordProtectionProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  
-  // Check if the page is already authorized
-  useEffect(() => {
-    const authorizedPages = JSON.parse(localStorage.getItem("authorizedPages") || "{}");
-    if (authorizedPages[pageName]) {
-      setIsOpen(false);
-    }
-  }, [pageName]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +26,15 @@ export function PasswordProtection({ pageName, returnPath }: PasswordProtectionP
     const storedPassword = localStorage.getItem("appPassword") || "1234";
     
     if (password === storedPassword) {
-      // Store authorization status in localStorage
-      const authorizedPages = JSON.parse(localStorage.getItem("authorizedPages") || "{}");
-      authorizedPages[pageName] = true;
-      localStorage.setItem("authorizedPages", JSON.stringify(authorizedPages));
-      
       setIsOpen(false);
+      toast({
+        title: "Access Granted",
+        description: "You now have access to this protected section",
+      });
+      
+      if (onAuthenticated) {
+        onAuthenticated();
+      }
     } else {
       setError("Incorrect password");
       toast({
@@ -52,10 +48,7 @@ export function PasswordProtection({ pageName, returnPath }: PasswordProtectionP
   // When dialog is closed without successful auth, redirect back
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      const authorizedPages = JSON.parse(localStorage.getItem("authorizedPages") || "{}");
-      if (!authorizedPages[pageName]) {
-        navigate(returnPath);
-      }
+      navigate(returnPath);
     }
     setIsOpen(open);
   };
@@ -83,6 +76,7 @@ export function PasswordProtection({ pageName, returnPath }: PasswordProtectionP
               setError("");
             }}
             className={error ? "border-destructive" : ""}
+            autoFocus
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
           

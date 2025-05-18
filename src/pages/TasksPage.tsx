@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { 
-  Plus, Filter, Calendar as CalendarIcon, CheckSquare, Clock, Tag, 
+  Plus, Calendar as CalendarIcon, CheckSquare, Clock, Tag, 
   AlertCircle, CheckCircle2, CircleCheck 
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -89,7 +89,7 @@ export function TasksPage() {
   });
   const [newTaskTag, setNewTaskTag] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   // Save tasks to localStorage whenever they change
@@ -244,11 +244,44 @@ export function TasksPage() {
           <p className="text-muted-foreground">Organize and manage your daily tasks</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
+        <div className="flex flex-wrap gap-2">
+          <div className="flex bg-secondary rounded-lg p-1 w-full sm:w-auto">
+            <Button 
+              variant={!selectedDate && !filteredTasks.some(t => t.completed) ? "default" : "ghost"}
+              size="sm" 
+              className="flex-1"
+              onClick={() => { 
+                setSelectedDate(undefined);
+              }}
+            >
+              <CheckSquare className="h-4 w-4 mr-2" />
+              Pending
+            </Button>
+            <Button 
+              variant={filteredTasks.some(t => t.completed) ? "default" : "ghost"}
+              size="sm" 
+              className="flex-1"
+              onClick={() => {
+                setSelectedDate(undefined);
+                // This visual state is handled in the tabs
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Completed
+            </Button>
+            <Button 
+              variant={!selectedDate && filteredTasks.some(t => !t.completed && new Date(t.dueDate) > new Date()) ? "default" : "ghost"}
+              size="sm" 
+              className="flex-1"
+              onClick={() => {
+                setSelectedDate(undefined);
+                // This visual state is handled in the tabs
+              }}
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Upcoming
+            </Button>
+          </div>
           
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>

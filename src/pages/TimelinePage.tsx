@@ -1,9 +1,24 @@
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GitBranch } from "lucide-react";
+import PasswordProtection from "@/components/PasswordProtection";
 
 export function TimelinePage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    const authorizedPages = JSON.parse(localStorage.getItem("authorizedPages") || "{}");
+    if (authorizedPages["timeline"]) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  if (!isAuthenticated) {
+    return <PasswordProtection pageName="timeline" returnPath="/" />;
+  }
+
   return (
     <div className="container">
       <div className="flex items-center justify-between mb-6">

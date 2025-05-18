@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Timeline } from "lucide-react";
+import { GitBranch } from "lucide-react";
 
 export function TimelinePage() {
   return (
@@ -15,7 +15,7 @@ export function TimelinePage() {
       
       <Card className="max-w-lg mx-auto">
         <CardHeader className="text-center p-6">
-          <Timeline className="h-12 w-12 mx-auto text-primary mb-4" />
+          <GitBranch className="h-12 w-12 mx-auto text-primary mb-4" />
           <CardTitle>Coming Soon</CardTitle>
         </CardHeader>
         <CardContent className="text-center pb-6">

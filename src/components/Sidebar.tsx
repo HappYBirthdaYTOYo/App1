@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { 
   CheckSquare, StickyNote, BookText, PenTool, MapPin, 
-  Bot, Lock, Clock, Timeline, User, Quote, ListTodo, Menu, X 
+  Bot, Lock, Clock, GitBranch, User, Quote, ListTodo, Menu, X 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "./ThemeProvider";
@@ -51,7 +51,7 @@ export function Sidebar({ className }: SidebarProps) {
     { path: "/assistant", icon: Bot, label: "Assistant" },
     { path: "/vault", icon: Lock, label: "Vault" },
     { path: "/time-capsule", icon: Clock, label: "Time Capsule" },
-    { path: "/timeline", icon: Timeline, label: "Timeline" },
+    { path: "/timeline", icon: GitBranch, label: "Timeline" },
     { path: "/profile", icon: User, label: "Profile" },
     { path: "/quotes", icon: Quote, label: "Quotes" },
     { path: "/bucket-list", icon: ListTodo, label: "Bucket List" },

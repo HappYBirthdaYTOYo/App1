@@ -1,6 +1,6 @@
 
 import { CheckSquare, StickyNote, BookText, PenTool, MapPin, 
-  Bot, Lock, Clock, Timeline, User, Quote, ListTodo, Plus, Star } from "lucide-react";
+  Bot, Lock, Clock, GitBranch, User, Quote, ListTodo, Plus, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -159,7 +159,7 @@ export function Dashboard() {
         
         <ModuleCard
           title="Timeline"
-          icon={<Timeline className="h-6 w-6 text-emerald-500" />}
+          icon={<GitBranch className="h-6 w-6 text-emerald-500" />}
           description="Visualize your life's important events"
           to="/timeline"
           color="bg-emerald-500/10"

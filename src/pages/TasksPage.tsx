@@ -6,12 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { 
-  Plus, Filter, Calendar, CheckSquare, Clock, Tag, 
+  Plus, Filter, Calendar as CalendarIcon, CheckSquare, Clock, Tag, 
   AlertCircle, CheckCircle2, CircleCheck 
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Task {
   id: string;
@@ -23,45 +27,58 @@ interface Task {
   completed: boolean;
 }
 
-const initialTasks: Task[] = [
-  {
-    id: "1",
-    title: "Complete project proposal",
-    description: "Finish the draft and send it for review",
-    priority: "high",
-    dueDate: "2025-05-20",
-    tags: ["work", "important"],
-    completed: false,
-  },
-  {
-    id: "2",
-    title: "Schedule dentist appointment",
-    priority: "medium",
-    dueDate: "2025-05-25",
-    tags: ["health"],
-    completed: false,
-  },
-  {
-    id: "3",
-    title: "Buy groceries",
-    description: "Milk, eggs, bread, vegetables",
-    priority: "low",
-    dueDate: "2025-05-19",
-    tags: ["personal"],
-    completed: false,
-  },
-  {
-    id: "4",
-    title: "Renew gym membership",
-    priority: "medium",
-    dueDate: "2025-05-30",
-    tags: ["health", "fitness"],
-    completed: true,
-  },
-];
+// Load tasks from localStorage if available
+const getInitialTasks = (): Task[] => {
+  const savedTasks = localStorage.getItem('tasks');
+  if (savedTasks) {
+    try {
+      return JSON.parse(savedTasks);
+    } catch (e) {
+      console.error("Error parsing saved tasks:", e);
+    }
+  }
+
+  // Default tasks if none are saved
+  return [
+    {
+      id: "1",
+      title: "Complete project proposal",
+      description: "Finish the draft and send it for review",
+      priority: "high",
+      dueDate: "2025-05-20",
+      tags: ["work", "important"],
+      completed: false,
+    },
+    {
+      id: "2",
+      title: "Schedule dentist appointment",
+      priority: "medium",
+      dueDate: "2025-05-25",
+      tags: ["health"],
+      completed: false,
+    },
+    {
+      id: "3",
+      title: "Buy groceries",
+      description: "Milk, eggs, bread, vegetables",
+      priority: "low",
+      dueDate: "2025-05-19",
+      tags: ["personal"],
+      completed: false,
+    },
+    {
+      id: "4",
+      title: "Renew gym membership",
+      priority: "medium",
+      dueDate: "2025-05-30",
+      tags: ["health", "fitness"],
+      completed: true,
+    },
+  ];
+};
 
 export function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(getInitialTasks());
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
   const [newTask, setNewTask] = useState<Partial<Task>>({
     title: "",
@@ -72,15 +89,24 @@ export function TasksPage() {
   });
   const [newTaskTag, setNewTaskTag] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  // Save tasks to localStorage whenever they change
+  const saveTasks = (updatedTasks: Task[]) => {
+    localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+    setTasks(updatedTasks);
+  };
 
   const todayTasks = tasks.filter(task => !task.completed && new Date(task.dueDate).toDateString() === new Date().toDateString());
   const upcomingTasks = tasks.filter(task => !task.completed && new Date(task.dueDate).toDateString() !== new Date().toDateString());
   const completedTasks = tasks.filter(task => task.completed);
 
   const toggleTaskCompletion = (id: string) => {
-    setTasks(tasks.map(task => 
+    const updatedTasks = tasks.map(task => 
       task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+    );
+    saveTasks(updatedTasks);
   };
 
   const addTask = () => {
@@ -95,7 +121,9 @@ export function TasksPage() {
         completed: false,
       };
       
-      setTasks([task, ...tasks]);
+      const updatedTasks = [task, ...tasks];
+      saveTasks(updatedTasks);
+      
       setNewTask({
         title: "",
         description: "",
@@ -132,6 +160,27 @@ export function TasksPage() {
       default: return "bg-slate-500/80";
     }
   };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date) {
+      setNewTask({
+        ...newTask,
+        dueDate: date.toISOString().split("T")[0]
+      });
+    }
+    setIsCalendarOpen(false);
+  };
+
+  const filterTasksByDate = (date: Date | undefined) => {
+    if (!date) return tasks;
+    
+    const filteredDate = date.toISOString().split("T")[0];
+    return tasks.filter(task => task.dueDate === filteredDate);
+  };
+  
+  // Filter tasks based on the selected date in the calendar
+  const filteredTasks = selectedDate ? filterTasksByDate(selectedDate) : tasks;
 
   const TaskItem = ({ task }: { task: Task }) => {
     const isPastDue = new Date(task.dueDate) < new Date() && !task.completed;
@@ -170,7 +219,7 @@ export function TasksPage() {
               
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <div className="flex items-center text-xs text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5 mr-1" />
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1" />
                   <span>{new Date(task.dueDate).toLocaleDateString()}</span>
                 </div>
                 
@@ -200,6 +249,24 @@ export function TasksPage() {
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
+          
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                Calendar
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleCalendarSelect}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
           
           <Button variant="outline" onClick={() => setViewMode(viewMode === "detailed" ? "compact" : "detailed")}>
             {viewMode === "detailed" ? "Compact View" : "Detailed View"}
@@ -258,12 +325,34 @@ export function TasksPage() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="task-date">Due Date</Label>
-                    <Input
-                      id="task-date"
-                      type="date"
-                      value={newTask.dueDate}
-                      onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !newTask.dueDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {newTask.dueDate ? format(new Date(newTask.dueDate), "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={newTask.dueDate ? new Date(newTask.dueDate) : undefined}
+                          onSelect={(date) => 
+                            setNewTask({ 
+                              ...newTask, 
+                              dueDate: date ? date.toISOString().split("T")[0] : undefined 
+                            })
+                          }
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
                 
@@ -314,67 +403,87 @@ export function TasksPage() {
         </div>
       </div>
       
-      <Tabs defaultValue="today" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="today" className="flex items-center">
-            <CheckSquare className="h-4 w-4 mr-2" />
-            Today
-          </TabsTrigger>
-          <TabsTrigger value="upcoming" className="flex items-center">
-            <Clock className="h-4 w-4 mr-2" />
-            Upcoming
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center">
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            Completed
-          </TabsTrigger>
-          <TabsTrigger value="all" className="flex items-center">
-            <Tag className="h-4 w-4 mr-2" />
-            All
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="today" className="mt-0">
-          {todayTasks.length > 0 ? (
-            todayTasks.map(task => <TaskItem key={task.id} task={task} />)
+      {selectedDate && (
+        <div className="mb-4">
+          <h2 className="text-xl font-medium mb-2">
+            Tasks for {format(selectedDate, "MMMM d, yyyy")}
+          </h2>
+          {filteredTasks.length > 0 ? (
+            filteredTasks.map(task => <TaskItem key={task.id} task={task} />)
           ) : (
             <Card>
               <CardHeader className="text-center py-6">
                 <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                <CardTitle>No tasks for today</CardTitle>
+                <CardTitle>No tasks for this date</CardTitle>
               </CardHeader>
             </Card>
           )}
-        </TabsContent>
-        
-        <TabsContent value="upcoming" className="mt-0">
-          {upcomingTasks.length > 0 ? (
-            upcomingTasks.map(task => <TaskItem key={task.id} task={task} />)
-          ) : (
-            <Card>
-              <CardHeader className="text-center py-6">
-                <CardTitle>No upcoming tasks</CardTitle>
-              </CardHeader>
-            </Card>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="completed" className="mt-0">
-          {completedTasks.length > 0 ? (
-            completedTasks.map(task => <TaskItem key={task.id} task={task} />)
-          ) : (
-            <Card>
-              <CardHeader className="text-center py-6">
-                <CardTitle>No completed tasks</CardTitle>
-              </CardHeader>
-            </Card>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="all" className="mt-0">
-          {tasks.map(task => <TaskItem key={task.id} task={task} />)}
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
+      
+      {!selectedDate && (
+        <Tabs defaultValue="today" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="today" className="flex items-center">
+              <CheckSquare className="h-4 w-4 mr-2" />
+              Today
+            </TabsTrigger>
+            <TabsTrigger value="upcoming" className="flex items-center">
+              <Clock className="h-4 w-4 mr-2" />
+              Upcoming
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="flex items-center">
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Completed
+            </TabsTrigger>
+            <TabsTrigger value="all" className="flex items-center">
+              <Tag className="h-4 w-4 mr-2" />
+              All
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="today" className="mt-0">
+            {todayTasks.length > 0 ? (
+              todayTasks.map(task => <TaskItem key={task.id} task={task} />)
+            ) : (
+              <Card>
+                <CardHeader className="text-center py-6">
+                  <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                  <CardTitle>No tasks for today</CardTitle>
+                </CardHeader>
+              </Card>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="upcoming" className="mt-0">
+            {upcomingTasks.length > 0 ? (
+              upcomingTasks.map(task => <TaskItem key={task.id} task={task} />)
+            ) : (
+              <Card>
+                <CardHeader className="text-center py-6">
+                  <CardTitle>No upcoming tasks</CardTitle>
+                </CardHeader>
+              </Card>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="completed" className="mt-0">
+            {completedTasks.length > 0 ? (
+              completedTasks.map(task => <TaskItem key={task.id} task={task} />)
+            ) : (
+              <Card>
+                <CardHeader className="text-center py-6">
+                  <CardTitle>No completed tasks</CardTitle>
+                </CardHeader>
+              </Card>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="all" className="mt-0">
+            {tasks.map(task => <TaskItem key={task.id} task={task} />)}
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
